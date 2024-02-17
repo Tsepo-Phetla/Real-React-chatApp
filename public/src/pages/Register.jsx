@@ -1,12 +1,14 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect} from 'react';
 import styled from "styled-components";
 import Logo from "../assets/finger-tapping.gif";
-import { Link } from 'react-router-dom';
-import { ToastContainer, toast,  } from "react-toastify";
-import "react-toastify/dist/ReactToastify.css"
+import { Link, useNavigate } from 'react-router-dom';
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
+import { registerRoute } from "../utils/APIRoutes";
 
 function Register() {
+  const navigate = useNavigate();
   const [values, setValues] = useState({
     username:"",
     email:"",
@@ -23,53 +25,52 @@ function Register() {
   }
 
   useEffect(() => {
-    console.log('Register component mounted');
-    // Optionally, you can return a cleanup function here
-    return () => {
-      console.log('Register component unmounted');
-    };
-  }, []); // Empty dependency array means this effect runs only once when the component mounts
+    if (localStorage.getItem(process.env.REACT_APP_LOCALHOST_KEY)) {
+      navigate("/");
+    }
+  }, [navigate]);
 
-  const registerRoute = '/api/register'; 
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (handleValidation()) {
-      const { password, confirmPassword, username, email } = values;
+      const { password, username, email } = values;
+      
       try {
         const { data } = await axios.post(registerRoute, {
           username,
           email,
           password,
-          confirmPassword
         });
-        console.log(data);
+        
+        if(data.status === false){
+          toast.error(data.msg, toastOptions);
+        }
+        if(data.status === true){
+          localStorage.setItem('chat-app-user', JSON.stringify(data.user));
+          navigate("/");
+        }
+        // Handle successful registration, e.g., redirect to login page
       } catch (error) {
-        console.error('Error:', error);
+        console.error('Registration failed:', error);
+        // Handle error, e.g., display an error message to the user
       }
     }
-   
   };
 
   const handleValidation = () => {
     const { password, confirmPassword, username, email } = values;
     if (password !== confirmPassword) {
-      console.log("inm validation', toast");
-      toast.error("Passwords and confirm password should be the same.", 
-      toastOptions
-      
-      );
+      toast.error("Passwords and confirm password should be the same.", toastOptions);
       return false;
     } else if (username.length <3){
-      toast.error("Username should be greater than 3 characters.", 
-      toastOptions
-      );
+      toast.error("Username should be greater than 3 characters.", toastOptions);
+      return false;
     } else if (password.length < 8){
-      toast.error("password should be greater than 8 characters.", 
-      toastOptions
-      );
+      toast.error("password should be greater than 8 characters.", toastOptions);
       return false;
     } else if(email ===""){
-toast.error("email is required", toastOptions);
+      toast.error("email is required", toastOptions);
+      return false;
     }
     return true;
   };
@@ -145,7 +146,7 @@ background-color:#DCDCDC ;
   }
   h1{
     color:#1E90FF;
-    text-transform: uppercase;
+   
   }
 }
 
